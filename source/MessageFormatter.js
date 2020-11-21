@@ -95,9 +95,7 @@ export default class MessageFormatter {
 	 */
 	format = memoize((message, values = {}, locale) => {
 
-		let processResult = this.process(message, values, locale);
-		let extractedResult = extractValues(processResult);
-		return extractedResult.join('');
+		return extractValues(this.process(message, values, locale)).join('');
 	})
 
 	/**

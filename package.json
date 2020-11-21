@@ -27,7 +27,6 @@
 	},
 	"dependencies": {
 		"@babel/runtime": "^7.11.2",
-		"@ultraq/array-utils": "^2.1.0",
 		"@ultraq/function-utils": "^0.3.0"
 	},
 	"devDependencies": {
