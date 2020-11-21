@@ -14,54 +14,15 @@
  * limitations under the License.
  */
 
-import {findClosingBracket, splitFormattedArgument} from './utilities.js';
+import {
+	decorateMessage,
+	decoratePlaceholder,
+	extractValues,
+	findClosingBracket,
+	splitFormattedArgument
+} from './utilities.js';
 
 import {memoize} from '@ultraq/function-utils';
-
-/**
- * Transforms a string that is part of an original message into an object which
- * describes it.
- * 
- * @param {String} string
- * @return {Object}
- */
-function decorateMessageString(string) {
-	return {
-		source: 'message',
-		value: string
-	};
-}
-
-/**
- * Transforms a value returned by a type handler into an object which describes
- * how the value was obtained.
- * 
- * @param {String} key
- * @param {String} type
- * @param {*} value
- * @return {Object}
- */
-function decorateValue(key, type, value) {
-	return {
-		source: 'value',
-		key,
-		type,
-		value
-	};
-}
-
-/**
- * Extract just the values from all of the nested metadata returned by the
- * {@link MessageFormatter#process} function.
- * 
- * @param {Array} array
- * @return {Array}
- */
-function extractValues(array) {
-	return array.reduce((acc, {value}) => {
-		return acc.concat(Array.isArray(value) ? extractValues(value) : value);
-	}, []);
-}
 
 /**
  * The main class for formatting messages.
@@ -129,7 +90,7 @@ export default class MessageFormatter {
 					let result = [];
 					let head = message.substring(0, blockStartIndex);
 					if (head !== null && head !== undefined && head !== '') {
-						result.push(decorateMessageString(head));
+						result.push(decorateMessage(head));
 					}
 					let [key, type, format] = splitFormattedArgument(block);
 					let body = values[key];
@@ -137,7 +98,7 @@ export default class MessageFormatter {
 						body = '';
 					}
 					let typeHandler = type && this.typeHandlers[type];
-					result = result.concat(decorateValue(key, type, typeHandler ?
+					result = result.concat(decoratePlaceholder(key, type, typeHandler ?
 						typeHandler(body, format, values, locale, this.process.bind(this)) :
 						body)
 					);
@@ -153,7 +114,7 @@ export default class MessageFormatter {
 			}
 		}
 		return [
-			decorateMessageString(message)
+			decorateMessage(message)
 		];
 	}
 }

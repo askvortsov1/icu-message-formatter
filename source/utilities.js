@@ -15,6 +15,65 @@
  */
 
 /**
+ * Used on the `source` property of the metadata object returned by
+ * {@link MessageFormatter#process}, denotes a value that came from the original
+ * message string.
+ */
+export const SOURCE_MESSAGE = 'message';
+
+/**
+ * Used on the `source` property of the metadata object returned by
+ * {@link MessageFormatter#process}, denotes a value that came from the
+ * placeholder values.
+ */
+export const SOURCE_PLACEHOLDER = 'placeholder';
+
+/**
+ * Transforms a string that is part of an original message into an object which
+ * describes it.
+ *
+ * @param {String} string
+ * @return {Object}
+ */
+export function decorateMessage(string) {
+	return {
+		source: SOURCE_MESSAGE,
+		value: string
+	};
+}
+
+/**
+ * Transforms a placeholder result into an object which describes how the value
+ * was obtained.
+ *
+ * @param {String} key
+ * @param {String} type
+ * @param {*} value
+ * @return {Object}
+ */
+export function decoratePlaceholder(key, type, value) {
+	return {
+		source: SOURCE_PLACEHOLDER,
+		key,
+		type,
+		value
+	};
+}
+
+/**
+ * Extract just the values from all of the nested metadata returned by the
+ * {@link MessageFormatter#process} function.
+ *
+ * @param {Array} array
+ * @return {Array}
+ */
+export function extractValues(array) {
+	return array.reduce((acc, {value}) => {
+		return acc.concat(Array.isArray(value) ? extractValues(value) : value);
+	}, []);
+}
+
+/**
  * Finds the index of the matching closing curly bracket, including through
  * strings that could have nested brackets.
  * 
