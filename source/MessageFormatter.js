@@ -16,8 +16,55 @@
 
 import {findClosingBracket, splitFormattedArgument} from './utilities.js';
 
-import {flatten} from '@ultraq/array-utils';
 import {memoize} from '@ultraq/function-utils';
+
+/**
+ * Transforms a string that is part of an original message into an object which
+ * describes it.
+ * 
+ * @param {String} string
+ * @return {Object}
+ */
+function decorateMessageString(string) {
+	return {
+		source: 'message',
+		value: string
+	};
+}
+
+/**
+ * Transforms a value returned by a type handler into an object which describes
+ * how the value was obtained.
+ * 
+ * @param {String} key
+ * @param {String} type
+ * @param {*} value
+ * @return {Object}
+ */
+function decorateValue(key, type, value) {
+	return {
+		source: 'value',
+		key,
+		type,
+		value
+	};
+}
+
+/**
+ * Extract just the values from all of the nested metadata returned by the
+ * {@link MessageFormatter#process} function.
+ * 
+ * @param {Array} array
+ * @return {Array}
+ */
+function extractValues(array) {
+	return array.reduce((acc, data) => {
+		return acc.concat(
+			Array.isArray(data) ? extractValues(data) :
+			Array.isArray(data.value) ? extractValues(data.value) : data.value
+		);
+	}, []);
+}
 
 /**
  * The main class for formatting messages.
@@ -51,16 +98,18 @@ export default class MessageFormatter {
 	 */
 	format = memoize((message, values = {}, locale) => {
 
-		return flatten(this.process(message, values, locale)).join('');
+		let processResult = this.process(message, values, locale);
+		let extractedResult = extractValues(processResult);
+		return extractedResult.join('');
 	})
 
 	/**
 	 * Process an ICU message syntax string using `values` for placeholder data
 	 * and any currently-registered type handlers.  The result of this method is
-	 * an array of the component parts after they have been processed in turn by
-	 * their own type handlers.  This raw output is useful for other renderers,
-	 * eg: React where components can be used instead of being forced to return
-	 * raw strings.
+	 * an array of objects, describing the component parts after they have been
+	 * processed in turn by their own type handlers.  This raw output is useful
+	 * for other renderers, eg: React where components can be returned instead of
+	 * raw strings, and so can be handled differently.
 	 * 
 	 * This method is used by {@link MessageFormatter#format} where it acts as a
 	 * string renderer.
@@ -85,7 +134,7 @@ export default class MessageFormatter {
 					let result = [];
 					let head = message.substring(0, blockStartIndex);
 					if (head !== null && head !== undefined && head !== '') {
-						result.push(head);
+						result.push(decorateMessageString(head));
 					}
 					let [key, type, format] = splitFormattedArgument(block);
 					let body = values[key];
@@ -93,9 +142,10 @@ export default class MessageFormatter {
 						body = '';
 					}
 					let typeHandler = type && this.typeHandlers[type];
-					result.push(typeHandler ?
+					result.push(decorateValue(key, type, typeHandler ?
 						typeHandler(body, format, values, locale, this.process.bind(this)) :
-						body);
+						body)
+					);
 					let tail = message.substring(blockEndIndex + 1);
 					if (tail !== null && tail !== undefined && tail !== '') {
 						result.push(this.process(tail, values, locale));
@@ -107,6 +157,8 @@ export default class MessageFormatter {
 				throw new Error(`Unbalanced curly braces in string: "${message}"`);
 			}
 		}
-		return [message];
+		return [
+			decorateMessageString(message)
+		];
 	}
 }
