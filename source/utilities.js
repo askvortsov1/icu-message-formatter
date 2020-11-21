@@ -41,6 +41,16 @@ export function findClosingBracket(string, fromIndex) {
 }
 
 /**
+ * Return whether or not a value is `null`, `undefined`, or the empty string.
+ * 
+ * @param {Object} value
+ * @return {Boolean}
+ */
+export function isNullUndefinedEmpty(value) {
+	return value === null || value === undefined || value === '';
+}
+
+/**
  * Split a `{key, type, format}` block into those 3 parts, taking into account
  * nested message syntax that can exist in the `format` part.
  * 

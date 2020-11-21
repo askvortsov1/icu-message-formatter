@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {findClosingBracket, splitFormattedArgument} from './utilities.js';
+import {findClosingBracket, isNullUndefinedEmpty, splitFormattedArgument} from './utilities.js';
 
 import {flatten} from '@ultraq/array-utils';
 import {memoize} from '@ultraq/function-utils';
@@ -68,9 +68,10 @@ export default class MessageFormatter {
 	 * @param {String} message
 	 * @param {Object} [values={}]
 	 * @param {String} [locale]
+	 * @param {Function} [valueProcessor]
 	 * @return {Array}
 	 */
-	process(message, values = {}, locale) {
+	process(message, values = {}, locale, valueProcessor = v => v) {
 
 		if (!message) {
 			return [];
@@ -83,23 +84,26 @@ export default class MessageFormatter {
 				let block = message.substring(blockStartIndex, blockEndIndex + 1);
 				if (block) {
 					let result = [];
+
 					let head = message.substring(0, blockStartIndex);
-					if (head !== null && head !== undefined && head !== '') {
+					if (!isNullUndefinedEmpty(head)) {
 						result.push(head);
 					}
+
 					let [key, type, format] = splitFormattedArgument(block);
 					let body = values[key];
-					if (body === null || body === undefined) {
-						body = '';
-					}
+					body = !isNullUndefinedEmpty(body) ? valueProcessor(body) : '';
+
 					let typeHandler = type && this.typeHandlers[type];
 					result.push(typeHandler ?
 						typeHandler(body, format, values, locale, this.process.bind(this)) :
 						body);
+
 					let tail = message.substring(blockEndIndex + 1);
-					if (tail !== null && tail !== undefined && tail !== '') {
+					if (!isNullUndefinedEmpty(tail)) {
 						result.push(this.process(tail, values, locale));
 					}
+
 					return result;
 				}
 			}
