@@ -58,11 +58,8 @@ function decorateValue(key, type, value) {
  * @return {Array}
  */
 function extractValues(array) {
-	return array.reduce((acc, data) => {
-		return acc.concat(
-			Array.isArray(data) ? extractValues(data) :
-			Array.isArray(data.value) ? extractValues(data.value) : data.value
-		);
+	return array.reduce((acc, {value}) => {
+		return acc.concat(Array.isArray(value) ? extractValues(value) : value);
 	}, []);
 }
 
@@ -142,13 +139,13 @@ export default class MessageFormatter {
 						body = '';
 					}
 					let typeHandler = type && this.typeHandlers[type];
-					result.push(decorateValue(key, type, typeHandler ?
+					result = result.concat(decorateValue(key, type, typeHandler ?
 						typeHandler(body, format, values, locale, this.process.bind(this)) :
 						body)
 					);
 					let tail = message.substring(blockEndIndex + 1);
 					if (tail !== null && tail !== undefined && tail !== '') {
-						result.push(this.process(tail, values, locale));
+						result = result.concat(this.process(tail, values, locale));
 					}
 					return result;
 				}
